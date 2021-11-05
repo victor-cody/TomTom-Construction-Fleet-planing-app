@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Constrution Fleet Planing App</title>
+    <!-- Bootstrap CSS -->
+    <!-- <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    /> -->
+
+    <link
+      href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.15.0/maps/maps.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <!-- CSS declarations for SearchBox plugin -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://api.tomtom.com/maps-sdk-for-web/cdn/plugins/SearchBox/6.15/SearchBox.css"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.15.0/maps/maps-web.min.js"></script>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.15.0/services/services-web.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container d-flex">
+      <div class="control-panel">
+        <h2 class="control-panel__title">Constrution Fleet Planing App</h2>
+        <form class="control-panel__controls overflow-auto shadow">
+          <fieldset>
+            <label for="start-address" class="">Start Address:</label
+            ><input
+              type="text"
+              class=""
+              placeholder="san diego"
+              id="start-address"
+            />
+          </fieldset>
+          <fieldset>
+            <label for="end-address" class="">End Address:</label
+            ><input
+              type="text"
+              class=""
+              placeholder="lily avenue"
+              id="end-address"
+            />
+          </fieldset>
+          <fieldset>
+            <label for="arrival-time" class="">Estimated Arrival Time:</label>
+            <input type="time" placeholder="Eg: 8:00" id="arrival-time" />
+          </fieldset>
+
+          <h3 class=""></h3>
+
+          <fieldset>
+            <label for="explosives-present"
+              >Vehicle is carrying explosives:</label
+            >
+            <input
+              type="checkbox"
+              id="explosives-present"
+              value="USHazmatClass1"
+            />
+          </fieldset>
+          <fieldset>
+            <label for="gas-present">Vehicle is carrying compressed gas:</label>
+            <input type="checkbox" id="gas-present" value="USHazmatClass2" />
+          </fieldset>
+          <fieldset>
+            <label for="is-truck">Vehicle is a truck:</label>
+            <input type="checkbox" id="is-truck" value="truck" />
+          </fieldset>
+
+          <button class="control-panel__btn">Track</button>
+        </form>
+      </div>
+      <div id="map" class="map"></div>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- <script src="./index.js" type="module" ></script> -->
+    <script>
+      const apiKey = "gBuQtiHC80qAV541N23tKQYRUtZbAKIH";
+
+      var map = tt.map({
+        key: apiKey,
+        container: "map",
+        // center: {lon: -121.867905, lat: 37.279518},
+        center: [4.8786, 52.3679],
+        zoom: 10,
+        // geopoliticalView: "San Jose, California",
+      });
+
+      map.addControl(new tt.FullscreenControl());
+      map.addControl(new tt.NavigationControl());
+
+      // sdk
+
+      var startAddress = document.getElementById("start-address"),
+        destinationAddress = document.getElementById("end-address"),
+        arriveTime = document.getElementById("arrival-time"),
+        isTruck = document.getElementById("is-truck"),
+        explosivesPresent = document.getElementById("explosives-present"),
+        gasPresent = document.getElementById("gas-present");
+
+      function createMarkerElement(type) {
+        var element = document.createElement("div");
+        var innerElement = document.createElement("div");
+
+        element.className = "route-marker";
+        innerElement.className = "icon tt-icon -white -" + type;
+        element.appendChild(innerElement);
+        return element;
+      }
+
+      function addMarkers(feature) {
+        var startPoint, endPoint;
+        if (feature.geometry.type === "MultiLineString") {
+          startPoint = feature.geometry.coordinates[0][0]; //get first point from first line
+          endPoint = feature.geometry.coordinates.slice(-1)[0].slice(-1)[0]; //get last point from last line
+        } else {
+          startPoint = feature.geometry.coordinates[0];
+          endPoint = feature.geometry.coordinates.slice(-1)[0];
+        }
+
+        new tt.Marker({ element: createMarkerElement("start") })
+          .setLngLat(startPoint)
+          .addTo(map);
+        new tt.Marker({ element: createMarkerElement("finish") })
+          .setLngLat(endPoint)
+          .addTo(map);
+      }
+
+      function findFirstBuildingLayerId() {
+        var layers = map.getStyle().layers;
+        for (var index in layers) {
+          if (layers[index].type === "fill-extrusion") {
+            return layers[index].id;
+          }
+        }
+
+        throw new Error(
+          "Map style does not contain any layer with fill-extrusion type."
+        );
+      }
+
+      function callbackFn(result) {
+        console.log(result);
+      }
+      document
+        .querySelector(".control-panel__btn")
+        .addEventListener("click", function (e) {
+          e.preventDefault();
+
+          let startCordinates, endCordinates;
+          console.log(startAddress.value);
+
+          tt.services
+            .fuzzySearch({
+              key: apiKey,
+              query: `${startAddress.value}`,
+              lon: 4.8786,
+              lat: 52.3679,
+            })
+            .then((search) => {
+              callbackFn(search);
+              startCordinates = search.results[0].position;
+              console.log(startCordinates);
+            });
+
+          tt.services
+            .fuzzySearch({
+              key: apiKey,
+              query: `${destinationAddress.value}`,
+              lon: 4.8786,
+              lat: 52.3679,
+            })
+            .then((search) => {
+              callbackFn(search);
+              endCordinates = search.results[0].position;
+              console.log(endCordinates);
+            });
+
+          tt.services
+            .calculateRoute({
+              key: apiKey,
+              locations: `${startCordinates}:${endCordinates}`,
+              // arriveAt: arriveTime ? arriveTime : null,
+              travelMode: isTruck.value ?? null,
+              vehicleLoadType: [
+                explosivesPresent.value ?? null,
+                gasPresent.value ?? null,
+              ],
+              vehicleCommercial: true,
+            })
+            .then(function (response) {
+              console.log(response.toGeoJson());
+              var geojson = response.toGeoJson();
+              map.addLayer(
+                {
+                  id: "route",
+                  type: "line",
+                  source: {
+                    type: "geojson",
+                    data: geojson,
+                  },
+                  paint: {
+                    "line-color": "#4a90e2",
+                    "line-width": 8,
+                  },
+                },
+                findFirstBuildingLayerId()
+              );
+
+              addMarkers(geojson.features[0]);
+
+              var bounds = new tt.LngLatBounds();
+              geojson.features[0].geometry.coordinates.forEach(function (
+                point
+              ) {
+                bounds.extend(tt.LngLat.convert(point)); // creates a bounding area
+              });
+              map.fitBounds(bounds, {
+                duration: 200,
+                padding: 50,
+                maxZoom: 10,
+              }); // zooms the map to the searched route
+            });
+        });
+
+      // searchBox
+      // const searchBoxOptions = tt.plugins.SearchBox({
+      //   idleTimePress: 100,
+      //   searchOptions: {
+      //     // key: "<your-tomtom-search-key>",
+      //     key: apiKey,
+      //     language: "en-GB",
+      //   },
+      //   autocompleteOptions: {
+      //     key: apiKey,
+      //     language: "en-GB",
+      //   },
+      //   labels: {
+      //     noResultsMessage: "No results found.",
+      //     placeholder: "",
+      //   },
+      //   distanceFromPoint: "4.3321,55.2121",
+      //   units: "kilometers",
+      // });
+
+      // const ttSearchBox = new tt.plugins.SearchBox(
+      //   tt.services,
+      //   searchBoxOptions
+      // );
+      // document
+      //   .querySelector(".tt-side-panel__header")
+      //   .appendChild(ttSearchBox.getSearchBoxHTML());
+      // document
+      //   .querySelector(".tt-side-panel__header")
+      //   .appendChild(ttSearchBox.getSearchBoxHTML());
+    </script>
+  </body>
+</html>
