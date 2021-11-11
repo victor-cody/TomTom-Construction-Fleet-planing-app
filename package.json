@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@tomtom-international/web-sdk-services": "^6.15.0"
+  }
+}

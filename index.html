@@ -18,12 +18,6 @@
       rel="stylesheet"
       type="text/css"
     />
-    <!-- CSS declarations for SearchBox plugin -->
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="https://api.tomtom.com/maps-sdk-for-web/cdn/plugins/SearchBox/6.15/SearchBox.css"
-    />
     <link rel="stylesheet" href="./styles.css" />
     <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.15.0/maps/maps-web.min.js"></script>
     <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.15.0/services/services-web.min.js"></script>
@@ -84,192 +78,287 @@
       <div id="map" class="map"></div>
     </div>
 
-    <script
+    <!-- <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
       crossorigin="anonymous"
-    ></script>
+    ></script> -->
 
     <!-- <script src="./index.js" type="module" ></script> -->
     <script>
-      const apiKey = "gBuQtiHC80qAV541N23tKQYRUtZbAKIH";
+      // const API_KEY = "gBuQtiHC80qAV541N23tKQYRUtZbAKIH";
+      const API_KEY = "Vn26cA8knt2E8sl0WBEWvAgWGRUf59mm";
+      const AMSTERDAM = { lon: 4.8786, lat: 52.3679 };
 
       var map = tt.map({
-        key: apiKey,
+        key: API_KEY,
         container: "map",
         // center: {lon: -121.867905, lat: 37.279518},
-        center: [4.8786, 52.3679],
+        center: AMSTERDAM,
         zoom: 10,
-        // geopoliticalView: "San Jose, California",
       });
 
       map.addControl(new tt.FullscreenControl());
       map.addControl(new tt.NavigationControl());
 
-      // sdk
+      // var requestOptions = {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({
+      //     name: "Construction Site 1",
+      //     type: "Feature",
+      //     geometry: {
+      //       radius: 80,
+      //       type: "Point",
+      //       shapeType: "Circle",
+      //       coordinates: [AMSTERDAM],
+      //     },
+      //     properties: {
+      //       maxSpeedKmh: 70,
+      //     },
+      //   }),
+      //   redirect: "follow",
+      // };
 
-      var startAddress = document.getElementById("start-address"),
-        destinationAddress = document.getElementById("end-address"),
-        arriveTime = document.getElementById("arrival-time"),
-        isTruck = document.getElementById("is-truck"),
-        explosivesPresent = document.getElementById("explosives-present"),
-        gasPresent = document.getElementById("gas-present");
+      // fetch(
+      //   "https://api.tomtom.com/geofencing/1/projects/85f9788d-eb57-4843-9961-13c3e7dddb14/?adminKey=8QfxMVRZI6hkZjSRLeobFHEjsCMYlcnHLjQUR826aPXTaoMt&key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH",
+      //   requestOptions
+      // )
+      //   .then((response) => response.text())
+      //   .then((result) => console.log(result))
+      //   .catch((error) => console.log("error", error));
 
-      function createMarkerElement(type) {
-        var element = document.createElement("div");
-        var innerElement = document.createElement("div");
-
-        element.className = "route-marker";
-        innerElement.className = "icon tt-icon -white -" + type;
-        element.appendChild(innerElement);
-        return element;
+      // moves the map to a lnglat cordinates
+      function moveMapTo(lnglat) {
+        map.flyTo({
+          center: lnglat,
+          zoom: 13,
+        });
       }
 
-      function addMarkers(feature) {
-        var startPoint, endPoint;
-        if (feature.geometry.type === "MultiLineString") {
-          startPoint = feature.geometry.coordinates[0][0]; //get first point from first line
-          endPoint = feature.geometry.coordinates.slice(-1)[0].slice(-1)[0]; //get last point from last line
-        } else {
-          startPoint = feature.geometry.coordinates[0];
-          endPoint = feature.geometry.coordinates.slice(-1)[0];
-        }
-
-        new tt.Marker({ element: createMarkerElement("start") })
-          .setLngLat(startPoint)
-          .addTo(map);
-        new tt.Marker({ element: createMarkerElement("finish") })
-          .setLngLat(endPoint)
-          .addTo(map);
-      }
-
-      function findFirstBuildingLayerId() {
-        var layers = map.getStyle().layers;
-        for (var index in layers) {
-          if (layers[index].type === "fill-extrusion") {
-            return layers[index].id;
-          }
-        }
-
-        throw new Error(
-          "Map style does not contain any layer with fill-extrusion type."
-        );
-      }
-
+      // logs to the console
       function callbackFn(result) {
         console.log(result);
       }
+
+      //markers array
+      const markers = [];
+      // add marker
+      function addMarker(lnglat) {
+        const marker = new tt.Marker().setLngLat(lnglat).addTo(map);
+        markers.push(marker.getLngLat());
+        console.log(markers);
+        // return marker.getLngLat();
+      }
+
+      map.on("click", (e) => {
+        addMarker(e.lngLat);
+      });
+
+      //calculate the route between haarlem and amsterdam with the TomTom Maps SDK for web Routing API CalculateRoute
+      // function calculateRoute() {
+      //   const startAddress = document.getElementById("start-address").value;
+      //   const endAddress = document.getElementById("end-address").value;
+      //   const arrivalTime = document.getElementById("arrival-time").value;
+
+      //   // const startAddress = "san diego";
+      //   // const endAddress = "lily avenue";
+      //   // const arrivalTime = "8:00";
+
+      //   const requestOptions = {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({
+      //       start: {
+      //         address: startAddress,
+      //       },
+      //       end: {
+      //         address: endAddress,
+      //       },
+      //       arrival: {
+      //         time: arrivalTime,
+      //       },
+      //     }),
+      //     redirect: "follow",
+      //   };
+
+      //   fetch(
+      //     "https://api.tomtom.com/routing/1/calculateRoute/4.8786,52.3679:4.8786,52.3679/json?key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH",
+      //     requestOptions
+      //   )
+      //     .then((response) => response.json())
+      //     .then((result) => {
+      //       console.log(result);
+      //       const route = result.routes[0];
+      //       const routeGeometry = route.geometry;
+      //       const routeCoordinates = routeGeometry.coordinates;
+      //       const routeLine = new tt.LineString(routeCoordinates);
+      //       const routeLineLayer = new tt.LineLayer({
+      //         data: routeLine,
+      //         width: 3,
+      //         color: "#007cbf",
+      //       }).addTo(map);
+      //       map.fitBounds(routeLineLayer.getBounds());
+      //     });
+      // }
+
+      // get the lnglat cordinates of an address
+      function getAddress(searchValue) {
+        tt.services
+          .fuzzySearch({
+            key: API_KEY,
+            query: searchValue,
+            lon: 4.8786,
+            lat: 52.3679,
+          })
+          .then((cordinates) => {
+            // console.log(cordinates);
+            // moveMapTo(cordinates.results[0].position);
+
+            // add marker
+            addMarker(cordinates.results[0].position);
+            console.log(cordinates.results[0].position);
+            // console.log(lnglat);
+            // return lnglat
+          });
+      }
+
+      const location = `${markers[0].lng}, ${markers[0].lng}: ${markers[1].lng}, ${markers[1].lng}`;
+      console.log(location);
+
+      // generate route
+      function getRoute() {
+        const routeOptions = {
+          key: API_KEY,
+          locations: location,
+          // arriveAt: document.getElementById("arrival-time").value,
+          travelMode: document.getElementById("is-truck").value,
+          // vehicleLoadType: [ document.getElementById("gas-present").value, document.getElementById("explosives-present").value],
+          vehicleCommercial: true,
+        };
+
+        tt.services.calculateRoute(routeOptions).then(function (response) {
+          console.log(response.toGeoJson());
+          console.log(response);
+          // var geojson = response.toGeoJson();
+          // map.addLayer({
+          //   id: "route",
+          //   type: "line",
+          //   source: {
+          //     type: "geojson",
+          //     data: geojson,
+          //   },
+          //   paint: {
+          //     "line-color": "#4a90e2",
+          //     "line-width": 8,
+          //   },
+          // });
+
+          // var bounds = new tt.LngLatBounds();
+          // geojson.features[0].geometry.coordinates.forEach(function (point) {
+          //   bounds.extend(tt.LngLat.convert(point)); // creates a bounding area
+          // });
+          // map.fitBounds(bounds, {
+          //   duration: 200,
+          //   padding: 50,
+          //   maxZoom: 13,
+          // }); // zooms the map to the searched route
+        });
+      }
+
       document
         .querySelector(".control-panel__btn")
         .addEventListener("click", function (e) {
           e.preventDefault();
 
-          let startCordinates, endCordinates;
-          console.log(startAddress.value);
+          Promise.all([
+            getAddress(document.getElementById("start-address").value),
+            getAddress(document.getElementById("end-address").value),
+          ])
+            .then(() => {
+              // const locations = [];
 
-          tt.services
-            .fuzzySearch({
-              key: apiKey,
-              query: `${startAddress.value}`,
-              lon: 4.8786,
-              lat: 52.3679,
+              // //adding our locations from the markers on the map
+              // for (const marker of markers) {
+              //   locations.push(marker);
+              // }
+
+              // console.log(locations);
+              getRoute();
             })
-            .then((search) => {
-              callbackFn(search);
-              startCordinates = search.results[0].position;
-              console.log(startCordinates);
-            });
-
-          tt.services
-            .fuzzySearch({
-              key: apiKey,
-              query: `${destinationAddress.value}`,
-              lon: 4.8786,
-              lat: 52.3679,
-            })
-            .then((search) => {
-              callbackFn(search);
-              endCordinates = search.results[0].position;
-              console.log(endCordinates);
-            });
-
-          tt.services
-            .calculateRoute({
-              key: apiKey,
-              locations: `${startCordinates}:${endCordinates}`,
-              // arriveAt: arriveTime ? arriveTime : null,
-              travelMode: isTruck.value ?? null,
-              vehicleLoadType: [
-                explosivesPresent.value ?? null,
-                gasPresent.value ?? null,
-              ],
-              vehicleCommercial: true,
-            })
-            .then(function (response) {
-              console.log(response.toGeoJson());
-              var geojson = response.toGeoJson();
-              map.addLayer(
-                {
-                  id: "route",
-                  type: "line",
-                  source: {
-                    type: "geojson",
-                    data: geojson,
-                  },
-                  paint: {
-                    "line-color": "#4a90e2",
-                    "line-width": 8,
-                  },
-                },
-                findFirstBuildingLayerId()
-              );
-
-              addMarkers(geojson.features[0]);
-
-              var bounds = new tt.LngLatBounds();
-              geojson.features[0].geometry.coordinates.forEach(function (
-                point
-              ) {
-                bounds.extend(tt.LngLat.convert(point)); // creates a bounding area
-              });
-              map.fitBounds(bounds, {
-                duration: 200,
-                padding: 50,
-                maxZoom: 10,
-              }); // zooms the map to the searched route
-            });
+            .catch((err) => console.log(err));
         });
 
-      // searchBox
-      // const searchBoxOptions = tt.plugins.SearchBox({
-      //   idleTimePress: 100,
-      //   searchOptions: {
-      //     // key: "<your-tomtom-search-key>",
-      //     key: apiKey,
-      //     language: "en-GB",
-      //   },
-      //   autocompleteOptions: {
-      //     key: apiKey,
-      //     language: "en-GB",
-      //   },
-      //   labels: {
-      //     noResultsMessage: "No results found.",
-      //     placeholder: "",
-      //   },
-      //   distanceFromPoint: "4.3321,55.2121",
-      //   units: "kilometers",
-      // });
+      // let Object;
 
-      // const ttSearchBox = new tt.plugins.SearchBox(
-      //   tt.services,
-      //   searchBoxOptions
-      // );
-      // document
-      //   .querySelector(".tt-side-panel__header")
-      //   .appendChild(ttSearchBox.getSearchBoxHTML());
-      // document
-      //   .querySelector(".tt-side-panel__header")
-      //   .appendChild(ttSearchBox.getSearchBoxHTML());
+      // function createObject() {
+
+      //   var requestOptions = {
+      //     method: "POST",
+      //     headers: {"Content-Type": "application/json"},
+      //     body: JSON.stringify({
+      //       name: "Truck 1",
+      //       properties: {
+      //         driver: "John Doe",
+      //       },
+      //     }),
+      //     redirect: "follow",
+      //   };
+
+      //   fetch(
+      //     "https://api.tomtom.com/locationHistory/1/objects/object?adminKey=85f9788d-eb57-4843-9961-13c3e7dddb14&key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH",
+      //     requestOptions
+      //   )
+      //     .then((response) => response.text())
+      //     .then((result) => {
+      //       Object = result;
+      //       console.log(result);
+      //     })
+      //     .catch((error) => console.log("error", error));
+      // }
+
+      // createObject()
+
+      // function getFences() {
+      //   return fetch(
+      //     `https://api.tomtom.com/geofencing/1/projects/${geofencingProjectId}/fences?key=${apiKey}`
+      //   )
+      //     .then(function (response) {
+      //       return response.data.fences;
+      //     })
+      //     .catch(function (err) {
+      //       console.log(err);
+      //     });
+      // }
+
+      // function displayFence(data) {
+      //   const polygon = new Polygon(data).addTo(map);
+      // }
+
+      // window.addEventListener("DOMContentLoaded", () => {
+      //   getFences()
+      //     .then(function (fences) {
+      //       return Promise.all(
+      //         fences.map(function (fence) {
+      //           return getFenceDetails(fence);
+      //         })
+      //       );
+      //     })
+      //     .then(function (fences) {
+      //       const transformedFences = [];
+      //       fences.forEach(function (fence) {
+      //         fence = transformFenceToGeoJson(fence);
+      //         transformedFences.push(fence);
+      //         displayFence(fence);
+      //       });
+      //       const geoJson = turf.featureCollection(transformedFences);
+      //       const bounds = getBounds(geoJson);
+      //       map.fitBounds(bounds, {
+      //         padding: { top: 15, bottom: 15, left: 15, right: 15 },
+      //         animate: false,
+      //       });
+      //     });
+      // });
     </script>
   </body>
 </html>
