@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Constrution Fleet Planing App</title>
+
+    <link
+      href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.16.0/maps/maps.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.16.0/maps/maps-web.min.js"></script>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.16.0/services/services-web.min.js"></script>
+  </head>
+
+  <body>
+    <div id="map" class="map"></div>
+    <script>
+      const API_KEY = "C7sHTlhiEDGA3l9kRNWfmeRhdICPGMis";
+
+      const SanJose = { lon: -121.867905, lat: 37.279518 };
+
+      var map = tt.map({
+        key: API_KEY,
+        container: "map",
+        center: SanJose,
+        zoom: 10,
+      });
+
+      map.addControl(new tt.FullscreenControl());
+      map.addControl(new tt.NavigationControl());
+
+      //markers array
+      const markers = [];
+      // add marker
+      function addMarker(lnglat) {
+        const marker = new tt.Marker().setLngLat(lnglat).addTo(map);
+        marker.on("dragend", onDragEnd);
+        markers.push(marker.getLngLat());
+        console.log(markers);
+        // return marker.getLngLat();
+      }
+
+      map.on("click", (e) => {
+        addMarker(e.lngLat);
+      });
+
+      function displayFence() {
+        fetch(
+          "https://api.tomtom.com/geofencing/1/fences/0b72a7e0-f93e-4ff5-91e6-a2e780804301?key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH"
+        )
+          .then((response) => response.json())
+          .then((result) => {
+            console.log(result);
+            map.addLayer({
+              id: "amsterdam",
+              type: "fill",
+              source: {
+                type: "geojson",
+                data: result,
+              },
+              paint: {
+                "fill-color": "orange",
+                "fill-opacity": 0.2,
+              },
+            });
+          });
+      }
+
+      map.on("load", () => {
+        displayFence();
+      });
+    </script>
+  </body>
+</html>
