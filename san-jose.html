@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Constrution Fleet Planing App</title>
+
+    <link
+      href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.16.0/maps/maps.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.16.0/maps/maps-web.min.js"></script>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.16.0/services/services-web.min.js"></script>
+    <style>
+      #map {
+        height: 100vh;
+        width: 100vw;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button class="show-history">Show History</button>
+    <button class="clear-markers">Clear Markers</button>
+    <div id="map" class="map"></div>
+
+    <script>
+      const API_KEY = "C7sHTlhiEDGA3l9kRNWfmeRhdICPGMis";
+
+      //   const SanJose = { lon: 4.89707, lat: 52.377956 };
+      const SanJose = { lon: -121.867905, lat: 37.279518 };
+
+      var map = tt.map({
+        key: API_KEY,
+        container: "map",
+        center: SanJose,
+        zoom: 10,
+      });
+
+      map.addControl(new tt.FullscreenControl());
+      map.addControl(new tt.NavigationControl());
+
+      function displayFence() {
+        fetch(
+          "https://api.tomtom.com/geofencing/1/fences/ed451036-d527-40f3-836f-fd6844fc60af?key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH"
+        )
+          .then((response) => response.json())
+          .then((result) => {
+            console.log(result);
+            map.addLayer({
+              id: "san-jose",
+              type: "fill",
+              source: {
+                type: "geojson",
+                data: result,
+              },
+              paint: {
+                "fill-color": "blue",
+                "fill-opacity": 0.6,
+              },
+            });
+          });
+      }
+
+      map.on("load", () => {
+        displayFence();
+      });
+    </script>
+  </body>
+</html>

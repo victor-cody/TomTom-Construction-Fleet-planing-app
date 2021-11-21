@@ -13,13 +13,32 @@
     />
     <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.16.0/maps/maps-web.min.js"></script>
     <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.16.0/services/services-web.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body::-webkit-scrollbar {
+        width: 0px;
+        height: 0px;
+      }
+      #map {
+        height: 100vh;
+        width: 100vw;
+      }
+    </style>
   </head>
 
   <body>
+    <button class="show-history">Show History</button>
+    <button class="clear-markers">Clear Markers</button>
     <div id="map" class="map"></div>
+
     <script>
       const API_KEY = "C7sHTlhiEDGA3l9kRNWfmeRhdICPGMis";
 
+      // const SanJose = { lon: 4.89707, lat: 52.377956 };
       const SanJose = { lon: -121.867905, lat: 37.279518 };
 
       var map = tt.map({
@@ -32,38 +51,23 @@
       map.addControl(new tt.FullscreenControl());
       map.addControl(new tt.NavigationControl());
 
-      //markers array
-      const markers = [];
-      // add marker
-      function addMarker(lnglat) {
-        const marker = new tt.Marker().setLngLat(lnglat).addTo(map);
-        marker.on("dragend", onDragEnd);
-        markers.push(marker.getLngLat());
-        console.log(markers);
-        // return marker.getLngLat();
-      }
-
-      map.on("click", (e) => {
-        addMarker(e.lngLat);
-      });
-
       function displayFence() {
         fetch(
-          "https://api.tomtom.com/geofencing/1/fences/0b72a7e0-f93e-4ff5-91e6-a2e780804301?key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH"
+          "https://api.tomtom.com/geofencing/1/fences/ed451036-d527-40f3-836f-fd6844fc60af?key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH"
         )
           .then((response) => response.json())
           .then((result) => {
             console.log(result);
             map.addLayer({
-              id: "amsterdam",
+              id: "San Jose",
               type: "fill",
               source: {
                 type: "geojson",
                 data: result,
               },
               paint: {
-                "fill-color": "orange",
-                "fill-opacity": 0.2,
+                "fill-color": "blue",
+                "fill-opacity": 0.6,
               },
             });
           });
@@ -72,6 +76,110 @@
       map.on("load", () => {
         displayFence();
       });
+
+      function sendPostion(lnglat) {
+        let cordinates = lnglat;
+
+        // create Json Object to store location
+        let position = {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [cordinates.lng, cordinates.lat, 0],
+          },
+          object: "d789c800-5225-45bb-beda-520fc1cda79d",
+          // timestamp: "<YYYY-MM-DDThh:mm:ss>",
+        };
+
+        // Use fetch to send the location
+        fetch(
+          "https://api.tomtom.com/locationHistory/1/history/positions?key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(position),
+          }
+        ).then((result) => {
+          console.log(result);
+        });
+      }
+
+      //markers array
+      const markers = [];
+      function addMarker(lnglat) {
+        const marker = new tt.Marker({ draggable: true })
+          .setLngLat(lnglat)
+          .addTo(map);
+
+        function onDragEnd() {
+          var lngLat = marker.getLngLat();
+          sendPostion(lngLat);
+        }
+        marker.on("dragend", onDragEnd);
+        markers.push(marker);
+      }
+
+      // get location history
+      function getObjectLocations() {
+        fetch(
+          "https://api.tomtom.com/locationHistory/1/history/positions/d789c800-5225-45bb-beda-520fc1cda79d?key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH&adminKey=8QfxMVRZI6hkZjSRLeobFHEjsCMYlcnHLjQUR826aPXTaoMt&from=2021-11-16T00:00:00"
+        )
+          .then((response) => response.json())
+          .then((result) => {
+            console.log(result);
+            // console.log(result.positions.features[0].geometry.coordinates);
+
+            const lngLatArray = result.positions.features.map(
+              (feature) => feature.geometry.coordinates
+            );
+            console.log(lngLatArray);
+            lngLatArray.forEach((lngLat) => {
+              addMarker(lngLat);
+            });
+
+            // map.addLayer({
+            //   id: "truck history",
+            //   type: "line",
+            //   source: {
+            //     type: "geojson",
+            //     data: {
+            //       type: "Feature",
+            //       geometry: {
+            //         type: "LineString",
+            //         coordinates: lngLatArray,
+            //       },
+            //     },
+            //   },
+            //   paint: {
+            //     "line-color": "purple",
+            //     "line-opacity": 0.7,
+            //     "line-width": 8,
+            //   },
+            // });
+          });
+      }
+      map.on("load", () => {
+        addMarker(SanJose);
+      });
+
+      // map.on("click", (e) => {
+      //   sendPostion(e.lngLat);
+      // });
+
+      document.querySelector(".show-history").addEventListener("click", (e) => {
+        e.preventDefault();
+        getObjectLocations();
+      });
+
+      document
+        .querySelector(".clear-markers")
+        .addEventListener("click", (e) => {
+          e.preventDefault();
+          markers.forEach((marker) => marker.remove());
+          markers.length = 0;
+        });
     </script>
   </body>
 </html>

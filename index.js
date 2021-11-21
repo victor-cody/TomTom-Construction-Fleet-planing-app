@@ -317,3 +317,36 @@ fetch(
   .catch((error) => console.log("error", error));
 
 
+// object for geofencing and locationHistory
+function createObject(name) {
+  var requestOptions = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: name,
+    }),
+  };
+
+  fetch(
+    "https://api.tomtom.com/locationHistory/1/objects/object?adminKey=8QfxMVRZI6hkZjSRLeobFHEjsCMYlcnHLjQUR826aPXTaoMt&key=gBuQtiHC80qAV541N23tKQYRUtZbAKIH",
+    requestOptions
+  )
+    .then((response) => response.text())
+    .then((result) => console.log(result))
+    .catch((error) => console.log("error", error));
+}
+
+createObject("Truck X12");
+
+// {"id":"d789c800-5225-45bb-beda-520fc1cda79d","name":"Truck X12"}
+
+// giving consent to store objects position
+fetch(
+  "https://api.tomtom.com/locationHistory/1/settings?key=Your_API_Key&adminKey=Your_Admin_Key",
+  {
+    method: "POST",
+    body: JSON.stringify({
+      consentForStoringObjectsPositionsHistory: true,
+    }),
+  }
+);
