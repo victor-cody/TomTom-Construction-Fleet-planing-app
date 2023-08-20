@@ -17,7 +17,7 @@ const getRoute = async ({ ...params }) => {
   }
 };
 
-// sdk
+// Initializing a TomTom map instance using the TomTom Maps SDK.
 const apiKey = "gBuQtiHC80qAV541N23tKQYRUtZbAKIH";
 
 var map = tt.map({
@@ -29,11 +29,12 @@ var map = tt.map({
   // geopoliticalView: "San Jose, California",
 });
 
+/**Adding map controlers to enable fullscreen and zoom/orient on the TomTom map instance */
 map.addControl(new tt.FullscreenControl());
 map.addControl(new tt.NavigationControl());
 
-// sdk
-
+/**Referencing input elements needed to configure a route calculation:
+ */
 var startAddress = document.getElementById("start-address"),
   destinationAddress = document.getElementById("end-address"),
   arriveTime = document.getElementById("arrival-time"),
@@ -41,6 +42,7 @@ var startAddress = document.getElementById("start-address"),
   explosivesPresent = document.getElementById("explosives-present"),
   gasPresent = document.getElementById("gas-present");
 
+// Creates a marker element on the a map.  
 function createMarkerElement(type) {
   var element = document.createElement("div");
   var innerElement = document.createElement("div");
@@ -51,6 +53,7 @@ function createMarkerElement(type) {
   return element;
 }
 
+/**Creates start and end markers for a route and adds them to the map*/
 function addMarkers(feature) {
   var startPoint, endPoint;
   if (feature.geometry.type === "MultiLineString") {
